@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8"> 
+  	<title>From Metal to Beyond</title>
+    <script src="vue.js"></script>
+    <script src="httpVueLoader.js"></script>
+    <style>#text{display: none}</style>
+</head>
+<body>
+	<div id="app">
+		<app-root></app-root>
+	</div>
+	<script>
+		v = name => httpVueLoader.register(Vue, name + '.vue')
+
+  	v('app-root')
+  	v('one-digit')
+    v('one-number')
+
+    Vue.config.productionTip = false
+		new Vue({el: '#app'})
+	</script>
+</body>
+</html>
