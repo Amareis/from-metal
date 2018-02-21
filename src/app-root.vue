@@ -1,13 +1,17 @@
 <template>
   <div>
+    <input v-model="rawInput" placeholder="New memory" />
+    <button @click="newMemory">Set memory</button> <br>
+
     <input id="divOps" type="checkbox" v-model="divideOperations" />
     <label for="divOps">Divide operations</label>
     <br><br>
+
     <div class="ops">
       <template v-for="(numbers, opi) in ops">
         <one-number
           v-for="(number, ni) in numbers"
-          :value="number"
+          v-model="numbers[ni]"
           :key="opi + ' ' + ni"
           :class="{active: isActive(opi, ni)}"
         ></one-number>
@@ -38,12 +42,15 @@ const proc = {
   },
 }
 
+const initMemory = [2,6, 2,6, 1,6, 0, 2,0, 1,0]
+
 module.exports = {
   data() {
     return {
       nextOpAddr: 0,
-      memory: [2,6, 2,6, 1,6, 0, 2,0, 1,0],
+      memory: initMemory,
       divideOperations: true,
+      rawInput: initMemory.join(' ')
     }
   },
 
@@ -95,6 +102,11 @@ module.exports = {
       const args = this.getN(this.nextOpAddr + 1, this.opLen(opCode) - 1)
       this.nextOpAddr += this.opLen(opCode)
       this.getOp(opCode)(...args)
+    },
+
+    newMemory() {
+      this.memory = this.rawInput.trim().split(/\s+/).map(Number)
+      this.nextOpAddr = 0
     },
   },
 }

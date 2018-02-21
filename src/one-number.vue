@@ -10,6 +10,15 @@ module.exports = {
       required: true,
     },
   },
+  methods: {
+    edit(evt) {
+      const range = document.createRange();
+      range.selectNodeContents(evt.target);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
 }
 </script>
 
