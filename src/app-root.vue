@@ -1,6 +1,6 @@
 <template>
   <div>
-    <textarea v-model="rawInput" placeholder="New memory"></textarea>
+    <textarea v-model="rawMemory" placeholder="New memory"></textarea>
     <button @click="newMemory">Set memory</button> <br>
 
     <input id="divOps" type="checkbox" v-model="divideOperations" />
@@ -20,10 +20,24 @@
     </div>
     <br>
     <button @click="step">One step</button>
+    <br><br>
+    <br><br>
+    <button @click="newMemory">Set rules</button> <br> <br>
+    <textarea v-model="rawRules" placeholder="Rules"></textarea>
+    <div v-for="rule of rules" class="rule">{{rule}}</div>
   </div>
 </template>
 
 <script>
+const rawRules = `
+0   nop
+1   IP = $1
+10  if (D == 0) IP = $1
+2   *1 = *1 + 1
+20  *1 = *1 + $2
+21  *1 = *1 + *2
+`
+
 const proc = {
   opBad() {
     throw new Error('Bad opcode!')
@@ -33,6 +47,38 @@ const proc = {
 
   op1(arg) {
     this.nextOpAddr = arg
+  },
+  op10(arg) {
+    if (this.diff === 0)
+      this.nextOpAddr = arg
+  },
+  op100(arg) {
+    if (this.diff !== 0)
+      this.nextOpAddr = arg
+  },
+  op11(arg) {
+    if (this.diff < 0)
+      this.nextOpAddr = arg
+  },
+  op12(arg) {
+    if (this.diff > 0)
+      this.nextOpAddr = arg
+  },
+  op13(arg) {
+    if (this.diff <= 0)
+      this.nextOpAddr = arg
+  },
+  op14(arg) {
+    if (this.diff >= 0)
+      this.nextOpAddr = arg
+  },
+  op15(arg) {
+    if (this.diff % 2 === 0)
+      this.nextOpAddr = arg
+  },
+  op16(arg) {
+    if (this.diff % 2 !== 0)
+      this.nextOpAddr = arg
   },
 
   op2(arg) {
@@ -53,6 +99,10 @@ const proc = {
   },
   op31(arg1, arg2) {
     this.set(arg1, this.get(arg1) - this.get(arg2))
+  },
+
+  op4(arg1, arg2) {
+    this.set(arg1, this.get(arg2))
   },
 
   op40(arg1, arg2) {
@@ -76,10 +126,13 @@ const proc = {
     this.set(arg1, this.get(arg1) % this.get(arg2))
   },
 
-  op7(arg1, arg2) {
-    this.set(arg1, this.get(arg2))
+  op7(arg1) {
+    this.diff = this.get(arg1)
   },
   op70(arg1, arg2) {
+    this.diff = this.get(arg1) - arg2
+  },
+  op71(arg1, arg2) {
     this.diff = this.get(arg1) - this.get(arg2)
   },
 
@@ -104,8 +157,14 @@ module.exports = {
       diff: 0,
       memory: initMemory,
       divideOperations: true,
-      rawInput: initMemory.join(' ')
+      rawMemory: initMemory.join(' '),
+      rawRules,
+      rules: {},
     }
+  },
+
+  mounted() {
+    this.newRules()
   },
 
   computed: {
@@ -159,8 +218,22 @@ module.exports = {
     },
 
     newMemory() {
-      this.memory = this.rawInput.trim().split(/\s+/).map(Number)
+      this.memory = this.rawMemory.trim().split(/\s+/).map(Number)
       this.nextOpAddr = 0
+    },
+
+    newRules() {
+      this.rawRules = this.rawRules.trim().replace(/\n+/, '\n')
+      for (let rawRule of this.rawRules.split(/\n/)) {
+        let [opcode, ...tokens] = rawRule.split(/\s+/)
+        tokens = tokens.join(' ')
+        this.rules[opcode] = tokens
+          .replace('IP', 'this.nextOpAddr')
+          .replace('D', 'this.diff')
+          .replace(/(.*)=(.*)/, 'this.set($1, $2)')
+          .replace(/\*(\d+)/g, 'this.get(arg$1)')
+          .replace(/\$(\d+)/g, 'arg$1')
+      }
     },
   },
 }
@@ -176,5 +249,8 @@ module.exports = {
   }
   .ops {
     display: flex;
+  }
+  .rule {
+    margin-top: 10px;
   }
 </style>
